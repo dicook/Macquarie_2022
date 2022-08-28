@@ -1,11 +1,11 @@
 ---
 title: "Myth busting and apophenia in data visualisation: is what you see really there?"
 author: 
-  - Professor Dianne Cook <br> Monash University <br> [slides](https://dicook.org/Macquarie-2022)
+  - Professor Dianne Cook <br> Monash University 
 format: 
   revealjs:
     multiplex: true
-    footer: "Macquarie University - August 29, 2022"
+    footer: "Macquarie University -- August 29, 2022 -- [https://github.com/dicook/Macquarie_2022](https://github.com/dicook/Macquarie_2022)"
     theme: ["serif", "mystyle.scss"]
     slide-number: c/t
     incremental: false
@@ -697,3 +697,9 @@ pvisual(x=??, K=??, 12)
 Slides produced using [quarto](https://quarto.org).
 
 Colour palettes using the [ochRe](https://github.com/hollylkirk/ochRe) R package.
+
+Slides available from [https://github.com/dicook/Macquarie_2022](https://github.com/dicook/Macquarie_2022). 
+
+Viewable at [https://www.dicook.org/files/macquarie_2022/slides#/title-slide](https://www.dicook.org/files/macquarie_2022/slides#/title-slide).
+
+Contact: dicook@monash.edu
