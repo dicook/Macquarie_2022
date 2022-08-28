@@ -1,0 +1,699 @@
+---
+title: "Myth busting and apophenia in data visualisation: is what you see really there?"
+author: 
+  - Professor Dianne Cook <br> Monash University <br> [slides](https://dicook.org/Macquarie-2022)
+format: 
+  revealjs:
+    multiplex: true
+    footer: "Macquarie University - August 29, 2022"
+    theme: ["serif", "mystyle.scss"]
+    slide-number: c/t
+    incremental: false
+    title-slide-attributes:
+      data-background-image: img/polls.png
+      data-background-size: 30%  
+      data-background-position: 20% 90%  
+editor: visual
+---
+
+```{r setup}
+#| include: false
+
+library(knitr)
+options(htmltools.dir.version = FALSE, tibble.width = 60)
+opts_chunk$set(
+  echo = FALSE, 
+  warning = FALSE, 
+  message = FALSE, 
+  error=FALSE, 
+  comment = "#>",
+  fig.align = 'center', 
+  fig.width = 12, 
+  fig.height = 11, 
+  fig.show = 'hold', 
+  fig.retina = 5,
+  cache = FALSE
+)
+
+# for interactive plots
+library(patchwork)
+library(shadowtext)
+
+# for color
+library(ochRe)
+
+# for plots
+library(tidyverse)
+library(lubridate)
+library(plotly)
+library(ggthemes)
+library(rnaturalearth)
+
+# for inference
+library(nullabor)
+library(MASS)
+
+# for fonts
+library(showtext)
+font_add_google("Lato", "Lato")
+showtext_auto()
+theme_set(theme_minimal(base_family = "Lato") +
+  theme(axis.line = element_line(colour = "black"),
+        panel.border = element_rect(
+          colour = "black", fill = NA)))
+```
+
+## Philosophy
+
+::: columns
+::: column
+Being able to construct effective data plots goes a long way to helping you understand any problem.
+:::
+
+::: column
+:::
+:::
+
+## Philosophy
+
+::: columns
+::: column
+Being able to construct effective data plots goes a long way to helping you understand any problem.
+:::
+
+::: column
+<p style="color:#c09048">
+
+The biggest complication is that data plots lack the inferential machinery of formal statistics ...<br><br>
+
+</p>
+
+<p align="right" style="color:#d89060">
+
+... but not any more!
+
+</p>
+:::
+:::
+
+## What I have learned from plots (1/5)
+
+<img src="img/PISA-1.png" width="900px"/>
+
+Gender gap in reading is universal, but the math gap is not. (Open data, available from [OECD PISA](https://www.oecd.org/pisa/).)
+
+## What I have learned from plots (2/5)
+
+<center>
+
+```{r polls, fig.align="center", fig.width=8, fig.height=6, out.width="90%"}
+polls <- read_csv("data/polls.csv")
+polls <- polls %>% mutate(
+    Poll = reorder(Poll, Poll, length)
+  ) 
+polls <- polls %>%
+  mutate(Poll_big = Poll)
+levels(polls$Poll_big)[1:25] <- "Other"
+polls <- polls %>% mutate(
+    Poll_big = reorder(Poll_big, Poll_big, length)
+  ) 
+brewer_cols <- RColorBrewer::brewer.pal(9, "Paired") # only palette with nine values without grey
+results <- data.frame(Date = ymd("2016/11/8"), dif = 1)
+
+ct <- ggplot(polls,  
+       aes(x = End_Date, 
+           y = Clinton - Trump)) +
+    annotate("text", x = ymd("2016/05/10"), 
+             y = 10, label = "Clinton", 
+             size = 20, colour = "grey90",
+             hjust=0) +
+    annotate("text", x = ymd("2016/05/4"), 
+             y = -10, label = "Trump", 
+             size = 20, colour = "grey90",
+             hjust=0) +
+    geom_hline(yintercept = 0, 
+               colour = "grey80") + 
+    geom_smooth(se = FALSE, 
+                colour = "grey50") +
+    geom_point(aes(colour = Poll_big, 
+               label=Poll_big), 
+               size = 2.9, alpha=0.7 ) +
+    geom_segment(aes(colour = Poll_big, 
+                     yend = Clinton - Trump,
+                     xend = Start_Date)) +
+    theme_bw() + 
+    theme(legend.position = "none") + 
+    scale_colour_manual("Pollster", 
+          values = c(brewer_cols, "grey70"), 
+          guide = guide_legend(nrow = 3)) +
+  ylim(c(-15, 15)) +
+  ylab("Percentage Point Difference") +
+  xlab("") + 
+  geom_point(data=results, 
+             aes(x=Date, y=dif), 
+             shape=3, size=5, colour="black")
+ggplotly(ct, width=800, height=500)
+```
+
+</center>
+
+Pollsters have some bias in their reported results. (Data generally available at [Real Clear Politics](http://www.realclearpolitics.com/elections/live_results/2016_general/president/).)
+
+## What I have learned from plots (3/5)
+
+::: columns
+::: {.column width="80%"}
+<img src="img/airports.png" width="700px"/>
+:::
+
+::: {.column width="20%"}
+<br><br>Flying into and out of Dallas-Fort Worth (DFW) is a good option, at least before the pandemic. (Open data, available from [BTS](https://www.transtats.bts.gov).)
+:::
+:::
+
+## What I have learned from plots (4/5)
+
+```{r echo=FALSE, eval=FALSE}
+CO2.ptb<-read.table("http://scrippsco2.ucsd.edu/sites/default/files/data/flask_co2_and_isotopic/daily_co2/fldav_ptb.csv", sep=",", skip=69)
+colnames(CO2.ptb)<-c("date", "time", "day", "decdate", "n", "flg", "co2")
+CO2.ptb$lat<-71.3
+CO2.ptb$lon<-(-156.6)
+CO2.ptb$stn<-"ptb"
+
+CO2.ljo<-read.table("http://scrippsco2.ucsd.edu/sites/default/files/data/flask_co2_and_isotopic/daily_co2/fldav_ljo.csv", sep=",", skip=69)
+colnames(CO2.ljo)<-c("date", "time", "day", "decdate", "n", "flg", "co2")
+CO2.ljo$lat<-32.9
+CO2.ljo$lon<-(-117.3)
+CO2.ljo$stn<-"ljo"
+
+CO2.spo<-read.table("http://scrippsco2.ucsd.edu/sites/default/files/data/flask_co2_and_isotopic/daily_co2/fldav_spo.csv", sep=",", skip=69)
+colnames(CO2.spo)<-c("date", "time", "day", "decdate", "n", "flg", "co2")
+CO2.spo$lat<- (-90.0)
+CO2.spo$lon<-0
+CO2.spo$stn<-"spo"
+
+CO2.ker<-read.table("http://scrippsco2.ucsd.edu/sites/default/files/data/flask_co2_and_isotopic/daily_co2/fldav_ker.csv", sep=",", skip=69)
+colnames(CO2.ker)<-c("date", "time", "day", "decdate", "n", "flg", "co2")
+CO2.ker$lat<-(-29.2)
+CO2.ker$lon<-(-177.9)
+CO2.ker$stn<-"ker"
+
+CO2.all<-rbind(CO2.ker,CO2.ljo,CO2.ptb,CO2.spo)
+CO2.all$date<-as.Date(CO2.all$date)
+
+CO2.all$invlat=-1*CO2.all$lat
+CO2.all$stn=reorder(CO2.all$stn,CO2.all$invlat)
+
+CO2.all.loc <- rbind(CO2.ker[1,],CO2.ljo[1,],CO2.ptb[1,],CO2.spo[1,])
+save(CO2.all, file="data/CO2.rda")
+```
+
+::: columns
+::: {.column width="80%"}
+```{r co2, echo=FALSE, warning=FALSE, error=FALSE, message=FALSE, fig.margin = TRUE, fig.height=6, fig.width=8, out.width="80%"}
+load("data/CO2.rda")
+ggplot(data=filter(CO2.all, flg < 2), aes(x=date, y=co2, colour=stn)) + 
+  geom_line() + xlab("Year") + ylab("CO2 (ppm)") +
+  scale_colour_manual(values=ochre_palettes$lorikeet[c(6,4,3,2)]) + 
+  theme(axis.text.y=element_text(size = 10)) + 
+  facet_wrap(~stn, ncol=1) + 
+  theme(legend.position = "none")
+```
+:::
+
+::: {.column width="20%"}
+<br><br>CO$_2$ is seasonal in the northern hemisphere, and increasing everywhere. (Open data is available from [Scripps](http://scrippsco2.ucsd.edu).)
+:::
+:::
+
+## What I have learned from plots (5/5)
+
+::: columns
+::: {.column width="80%"}
+```{r bushfires, out.width="100%"}
+# remotes::install_github("ropensci/rnaturalearthhires")
+au_map <- ne_states(country = 'Australia', returnclass = 'sf')
+vic_map <- au_map[7,]
+
+read_csv("data/prediction_2019-2020.csv") %>%
+  mutate(cause = factor(tools::toTitleCase(cause), levels = c("Lightning", "Accident", "Arson", "Burning_off"))) %>%
+  ggplot() +
+  geom_sf(data = vic_map, fill = "grey99") +
+  geom_point(aes(lon, lat, col = cause, text = paste0("Mon: ", month.abb[month(time)])), size = 1.5, alpha = 1) +
+  theme_map(base_size = 20) +
+  theme(legend.position = "none") +
+  # facet_wrap(~factor(month.abb[month(time)], levels = c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar"))) +
+  scale_color_brewer("", palette = "RdBu") -> p
+
+ggplotly(p, tooltip = c("colour", "text"), 
+         width=900, height=600)
+
+```
+:::
+
+::: {.column width="20%"}
+<br><br> 82% of 2019-2020 Victorian bushfires were caused by lightning, and only 4% by arson. (Data and code [here](https://github.com/TengMCing/spotoroo).)
+:::
+:::
+
+## 
+
+<h1 align="center" style="font-size:40px color:#a8c0a8">
+
+Without making plots we might never have learned these, and many more things. Plots allow the data to share its secrets.
+
+</h1>
+
+## What about this one?
+
+```{r wasps, fig.width=8, fig.height=5, out.width="100%"}
+data(wasps)
+wasps <- wasps %>% dplyr::select(-ID)
+wasps_lda <- as_tibble(predict(lda(Group~., data=wasps), dimen=2)$x)
+wasps_lda <- bind_cols(wasps, wasps_lda)
+ggplot(wasps_lda, aes(x=LD1, y=LD2, colour=Group)) +
+  geom_point(size=3) + 
+  scale_colour_brewer("", palette="Set2") + 
+  theme(aspect.ratio=1)
+```
+
+## Apophenia
+
+::: columns
+::: column
+<br>*Apophenia is the human experience of seeing meaningful patterns or connections in random or meaningless data.*
+
+<br> [Chelsea Veals, 2012](https://sites.google.com/site/ribboneyes/home/final-exam/apophenia)
+:::
+
+::: column
+<img src="http://4.bp.blogspot.com/-y0HfJos9pNk/To675BFAQqI/AAAAAAAAARs/cj0dY00dQoY/s1600/cloud-shapes.jpg" align="right"/>
+:::
+:::
+
+## 
+
+::: columns
+::: {.column width="30%"}
+<br><br>
+
+<p style="color: #c09048">
+
+Which plot exhibits the most separation between the groups?
+
+</p>
+:::
+
+::: {.column width="70%"}
+```{r wasp-lineup, fig.width=7, fig.height=7, out.width="100%"}
+wasps_lineup <- NULL
+for (i in 1:11) {
+  x <- wasps
+  x$Group <- sample(x$Group)
+  x_lda <- as_tibble(predict(lda(Group~., data=x), dimen=2)$x)
+  x_lda <- bind_cols(x %>% dplyr::select(Group), x_lda)
+  x_lda$.sample <- i
+  wasps_lineup <- bind_rows(wasps_lineup, x_lda)
+}
+wasps_lda <- wasps_lda %>% dplyr::select(Group, LD1, LD2)
+wasps_lda$.sample <- 12
+wasps_lineup <- bind_rows(wasps_lineup, wasps_lda)
+ggplot(wasps_lineup, aes(x=LD1, y=LD2, colour=Group)) +
+  geom_point() +
+  facet_wrap(~.sample, ncol=4) + 
+  scale_colour_manual(values=ochre_palettes$lorikeet[c(2,6,3,4)]) +   
+  theme(aspect.ratio=1, legend.position="none",
+        strip.text=element_text(size=24, 
+               colour = "#c07848"))
+```
+:::
+:::
+
+## In support of plotting data {.incremental}
+
+<br> Data plots are important for making discoveries - failing to make a discovery is a tragedy.
+
+<br><br>
+
+<p style="color:#c09048">
+
+Plots need to be accompanied with methods (modern computational techniques) to guard against false discovery.
+
+</p>
+
+## 
+
+<img src="img/vis_inf.png" align="center" width="100%"/>
+
+## Inferential machinery
+
+<p style="color:#c09048">
+
+*Why is a plot a statistic?*
+
+</p>
+
+Many of you (hopefully) use `ggplot2` to make your plots with a grammar of graphics from tidy data.
+
+```{r echo=TRUE, eval=FALSE}
+data %>% 
+  ggplot() + 
+    GEOM_something(
+      mapping=aes(MAPPINGS)) + #<< 
+  extra nice styling
+```
+
+<br> *A statistic is a function of a random variable(s).* This is how the mapping can be interpreted, e.g. `x=V1, y=V2, colour=cl`, and the GEOM is the *function*.
+
+## Making comparisons with a null
+
+```{r echo=TRUE, eval=FALSE}
+ggplot(data=lineup(null_generator(VARS), #<<
+                   DATA) + 
+  GEOM_something(
+    mapping=aes(MAPPINGS)) +
+  facet_wrap(~ .sample) + #<<
+  extra nice styling
+```
+
+<br>
+
+<p style="color:#c09048">
+
+Null hypothesis: *There is NO pattern*
+
+</p>
+
+Alternative: There is *some* sort of pattern
+
+<br><br> Test by comparing with *null plots*.
+
+## Example
+
+::: columns
+::: {.column width="40%"}
+<br>
+
+```{r}
+set.seed(2022)
+```
+
+```{r echo=TRUE, message=TRUE}
+p <- ggplot(lineup(
+        null_permute('cyl'), 
+              mtcars, n=12),
+        aes(x=mpg, 
+            y=hp, 
+            colour = factor(cyl))) +
+       facet_wrap(~ .sample) +
+       geom_point(size=2, 
+                  alpha=0.8) +
+  xlab("") + ylab("") +
+  scale_colour_ochre("",
+       palette="healthy_reef") +
+  theme(axis.text = 
+          element_blank())
+```
+
+<br>
+
+<p style="color:#c09048">
+
+Can you identify the odd one out?
+
+</p>
+:::
+
+::: {.column width="60%"}
+```{r mtcars-lineup, fig.width=6, fig.height=6, out.width="100%"}
+p + theme(legend.position="none",
+          strip.text=element_text(size=24, 
+               colour = "#c07848"),
+        axis.text = element_blank(),
+        axis.title = element_blank())
+```
+:::
+:::
+
+## REVIEW: Tidy data, plot, inference
+
+::: columns
+::: {.column width="30%"}
+1
+
+Define your plot, based on tidy data
+
+<br>
+
+```{r echo=TRUE, eval=FALSE}
+ggplot() + 
+  GEOM_something(
+    mapping=aes(MAPPINGS))
+```
+:::
+
+::: {.column width="30%"}
+2
+
+Add data
+
+<br><br>
+
+```{r echo=TRUE, eval=FALSE}
+DATA %>% 
+  ggplot() + 
+    GEOM_something(
+    mapping=aes(MAPPINGS))
+```
+:::
+
+::: {.column width="30%"}
+3
+
+Compare your data plot with a sample of null plots
+
+```{r echo=TRUE, eval=FALSE}
+ggplot(data=LINEUP(
+  NULL_GENERATOR(VARS), 
+     DATA) + 
+  GEOM_something(
+    mapping=aes(MAPPINGS)) +
+  facet_wrap(~ .sample)
+```
+:::
+:::
+
+## Calculating statistical significance and power
+
+::: columns
+::: column
+Lineup is viewed by $K$ uninvolved, independent observers. The chance that any observer chooses the data plot is $1/m$, where $m$ is the number of plots in the lineup. With $K$ observers, the $p$-value is the probability that $x$ or more select the data plot.
+
+Signal strength (visual power) is the computed as the $x/K$, adjusting for multiple selections.
+:::
+
+::: column
+```{r}
+options(digits=3)
+```
+
+```{r pvisual1, echo=TRUE}
+pvisual(x=2, K=23, m=12)
+```
+
+<br>
+
+```{r pvisual2, echo=TRUE}
+pvisual(x=5, K=23, m=12)
+```
+
+<br>
+
+```{r pvisual3, echo=TRUE}
+pvisual(x=8, K=23, m=12)
+```
+:::
+:::
+
+## The `nullabor` package {background-image="http://dicook.github.io/nullabor/reference/figures/nullabor_hex.png" background-size="170px" background-position="90% 20%"}
+
+-   `lineup`: Generates a lineup using one of the given null generating mechanisms
+    -   `null_permute`
+    -   `null_dist`
+    -   `null_lm`
+    -   `null_ts`
+-   `pvisual`: Compute $p$-values, after showing to observers
+-   `visual_power`: Compute the *power*, after showing to observers
+-   `distmet`: empirical distribution of distance between data plot and null plots
+
+<http://dicook.github.io/nullabor/>
+
+## Example: tuberculosis data (1/6)
+
+```{r}
+tb <- read_csv(here::here("data/TB_notifications_2020-07-01.csv"))
+glimpse(tb)
+```
+
+<p style="color:#c09048">
+
+Is the data in tidy form?
+
+</p>
+
+## Example: tuberculosis data (2/6)
+
+```{r}
+tb <- read_csv(here::here("data/TB_notifications_2020-07-01.csv")) %>% 
+  dplyr::select(country, iso3, year, 
+         new_sp_m04:new_sp_fu) %>%
+  pivot_longer(cols=contains("new_sp"),
+               names_to="stuff", 
+               values_to="count") %>%
+  separate(stuff, c("stuff1", 
+                    "stuff2",
+                    "sexage")) %>%
+  dplyr::select(-stuff1, -stuff2) %>%
+  mutate(sex=substr(sexage, 1, 1), 
+         age=substr(sexage, 2, length(sexage))) %>%
+  dplyr::select(-sexage)
+glimpse(tb)
+```
+
+Data is now clearly tidy form.
+
+<p style="color:#c09048">
+
+Variables are `country`, `iso3`, `year`, `count`, `sex`, `age`.
+
+</p>
+
+## Example: tuberculosis data (3/6)
+
+::: columns
+::: column
+<p style="color:#c09048">
+
+Focusing only on Australia, what would we like to know?
+
+</p>
+
+1.  Is there an increasing or decreasing trend?
+2.  Is there a difference by age?
+3.  Is there a difference by sex?
+4.  Is there a difference by age and sex?
+5.  Is the trend different by age?
+6.  Is the trend different by sex?
+7.  Is the trend different by age and sex?
+:::
+
+::: column
+<p style="color:#c09048">
+
+What type of plot would we make to investigate Q1?
+
+</p>
+
+<p style="color:#c09048">
+
+What type of plot would we make to investigate Q6?
+
+</p>
+:::
+:::
+
+## Example: tuberculosis data (4/6)
+
+```{r}
+tb_oz <- tb %>% 
+  dplyr::filter(country == "Australia") %>%
+  dplyr::filter(!(age %in% c("04", "014", "514", "u"))) %>%
+  dplyr::filter(year > 1996, year < 2013) %>%
+  mutate(
+    age_group = factor(age, labels = c("15-24", "25-34", "35-44", "45-54", "55-64", "65+"))
+  )
+```
+
+::: columns
+::: column
+<br><br>
+
+```{r echo=TRUE}
+p <- tb_oz %>% 
+  group_by(year) %>%
+  summarise(count = sum(count)) %>%
+  ggplot(aes(x=year, y=count)) +
+    geom_col()
+```
+:::
+
+::: column
+<br><br>
+
+<p style="color:#c09048">
+
+For the question: Is there an increasing or decreasing trend?
+
+</p>
+
+What would the null hypothesis be?
+
+What would be a possible null generator?
+:::
+:::
+
+## Example: tuberculosis data (5/6)
+
+::: columns
+::: {.column width="78%"}
+```{r tb_lineup, fig.width=8, fig.height=6, out.width="100%"}
+#| code-fold: true
+#| code-summary: "Show the code"
+tb_oz_yr <- tb_oz %>% 
+  group_by(year) %>%
+  summarise(count = sum(count)) 
+ggplot(lineup(null_permute("count"), 
+              tb_oz_yr, n=12, pos=10), 
+       aes(x=year, y=count)) +
+    geom_col() +
+  facet_wrap(~.sample) +
+  theme(strip.text=element_text(size=24, colour = "#c07848"),
+        axis.text = element_blank(),
+        axis.title = element_blank())
+```
+:::
+
+::: {.column width="22%"}
+Go to www.menti.com and use the code 8049 8450
+
+<br><br><br> [Check results](https://www.mentimeter.com/app/presentation/6d78761dd47d9f8f239148369a94aaae/dec1f9e6e805)
+:::
+:::
+
+## Example: tuberculosis data (6/6)
+
+<br>
+
+Compute the $p$-value.
+
+<br> <br>
+
+```{r echo=TRUE, eval=FALSE}
+pvisual(x=??, K=??, 12)
+```
+
+## Summary
+
+-   We have equipped data plots with statistical inference machinery. With the grammar of graphics, data plots can be statistics, and thus data plots can be tested in an equivalent manner to formal hypothesis testing, using modern randomisation techniques.
+-   The inference machinery can be used to objectively test plot design. The design that has the highest visual power, is the winner.
+-   The framework should be suitable for training computer vision models to read data plots. Hoping to off-load visual model diagnostics to a robot.
+
+## Further reading
+
+[Buja et al (2009)](https://royalsocietypublishing.org/doi/full/10.1098/rsta.2009.0120) Statistical Inference for Exploratory Data Analysis <br> [Wickham et al (2010)](https://ieeexplore.ieee.org/document/5613434) Graphical Inference for Infovis <br> [Hofmann et al (2012)](https://pubmed.ncbi.nlm.nih.gov/26357152/) Graphical Tests for Power Comparison <br> [Majumder et al (2013)](https://www.tandfonline.com/doi/full/10.1080/01621459.2013.808157) Validation of Visual Statistical Inference <br> [Yin et al (2013)](https://www.walshmedicalmedia.com/open-access/visual-mining-methods-for-rnaseq-data-data-structure-dispersion-estimation-and-significance-testing-2153-0602.1000139.pdf) Visual Mining Methods for RNA-Seq data <br> [Zhao, et al (2014)](https://www.semanticscholar.org/paper/Mind-Reading%3A-Using-an-Eye-Tracker-to-See-How-are-Zhao-Cook/b1caa062cd6d9b74cc9b4346e2c1e0efda43a2f6) Mind Reading: Using An Eye-tracker to See How People Are Looking At Lineups <br> [Lin et al (2015)](https://resjournals.onlinelibrary.wiley.com/doi/full/10.1111/een.12191) Does Host-Plant Diversity Explain Species Richness in Insects? <br> [Roy Chowdhury et al (2015)](https://link.springer.com/article/10.1007/s00180-014-0534-x) Using Visual Statistical Inference to Better Understand Random Class Separations in High Dimension, Low Sample Size Data <br> [Loy et al (2017)](https://www.tandfonline.com/doi/full/10.1080/10618600.2017.1330207) Model Choice and Diagnostics <br> [Roy Chowdhury et al (2018)](https://www.tandfonline.com/doi/full/10.1080/10618600.2017.1356323) Measuring Lineup Difficulty By Matching Distance Metrics with Subject Choices
+
+## Acknowledgements
+
+Slides produced using [quarto](https://quarto.org).
+
+Colour palettes using the [ochRe](https://github.com/hollylkirk/ochRe) R package.
